@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claim Copilot</title>
+<style>
+  :root { --bg:#fafaf8; --fg:#1d1d1b; --muted:#6b6b66; --line:#dcdcd5; --accent:#1f6f5c; --warn:#a15c00; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161615; --fg:#ececE8; --muted:#9a9a93; --line:#33332f; --accent:#4fb59b; --warn:#e0a040; } }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui, sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:24px 16px 64px; }
+  h1 { font-size:22px; margin:0 0 4px; } p.sub { color:var(--muted); margin:0 0 24px; }
+  h2 { font-size:16px; margin:28px 0 8px; }
+  textarea { width:100%; box-sizing:border-box; min-height:150px; font:13px/1.4 ui-monospace, monospace;
+             background:transparent; color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:10px; }
+  button { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:10px 16px; font-size:15px; margin-top:8px; cursor:pointer; }
+  .out { border:1px solid var(--line); border-radius:8px; padding:12px 14px; margin-top:12px; white-space:pre-wrap; }
+  .big { font-size:20px; font-weight:600; } .warn { color:var(--warn); }
+  .note { color:var(--muted); font-size:14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Claim Copilot</h1>
+  <p class="sub">Estimate what your insurer will pay, check a bill, draft a complaint. Estimates only; not legal or medical advice.</p>
+
+  <h2>1. Policy terms and bill</h2>
+  <p class="note">Sample data below. Edit the numbers, then press Estimate.</p>
+  <textarea id="input">{
+  "policy": {
+    "sum_insured": 500000,
+    "room_rent_cap_per_day": 5000,
+    "copay_pct": 10,
+    "clauses": {
+      "room_rent": {"ref": "Section 4.2", "text": "Room rent is limited to Rs 5,000 per day", "page": 7},
+      "copay": {"ref": "Section 6.1", "text": "Insured bears 10% of every admissible claim", "page": 9}
+    }
+  },
+  "claim": {
+    "lines": [
+      {"description": "Room", "category": "room", "amount": 24000, "days": 3},
+      {"description": "Doctor fees", "category": "doctor_fees", "amount": 20000},
+      {"description": "Surgery", "category": "surgery", "amount": 50000},
+      {"description": "Pharmacy", "category": "pharmacy", "amount": 10000},
+      {"description": "Gloves", "category": "other", "amount": 800},
+      {"description": "Gloves", "category": "other", "amount": 800}
+    ]
+  }
+}</textarea>
+  <button id="est">Estimate payout</button>
+  <button id="aud">Audit bill</button>
+  <div id="result"></div>
+
+  <h2>2. Draft a complaint</h2>
+  <textarea id="g" style="min-height:90px">{"level":"insurer_grievance_officer","insurer":"[Insurer]","reason":"Proportionate deduction applied on room rent","clause_ref":"Section 4.2","disputed_amount":"20000"}</textarea>
+  <button id="gen">Draft letter</button>
+  <div id="letter"></div>
+</main>
+<script>
+const el = id => document.getElementById(id);
+async function call(path, body) {
+  const r = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  return {ok: r.ok, data: await r.json()};
+}
+function show(node, text, cls) { const d = document.createElement('div'); d.className = 'out ' + (cls||''); d.textContent = text; node.replaceChildren(d); }
+el('est').onclick = async () => {
+  try {
+    const {ok, data} = await call('/api/estimate', JSON.parse(el('input').value));
+    if (!ok) return show(el('result'), data.error, 'warn');
+    let t = `Billed Rs ${data.total_billed}\nInsurer pays about Rs ${data.payable}\nYou pay about Rs ${data.patient_pays}\n\nHow we got there:\n`;
+    for (const s of data.steps) t += `- ${s.explanation} (Rs ${s.effect})` + (s.clause ? `\n    Policy: ${s.clause.ref}${s.clause.page ? ', page ' + s.clause.page : ''}: "${s.clause.text}"` : '') + '\n';
+    for (const w of data.warnings) t += `\nNote: ${w}`;
+    show(el('result'), t);
+  } catch (e) { show(el('result'), 'Check the JSON: ' + e.message, 'warn'); }
+};
+el('aud').onclick = async () => {
+  try {
+    const {ok, data} = await call('/api/audit', JSON.parse(el('input').value));
+    if (!ok) return show(el('result'), data.error, 'warn');
+    show(el('result'), data.findings.length ? data.findings.map(f => '- ' + f.detail).join('\n') : 'Nothing flagged.');
+  } catch (e) { show(el('result'), 'Check the JSON: ' + e.message, 'warn'); }
+};
+el('gen').onclick = async () => {
+  try {
+    const {ok, data} = await call('/api/grievance', JSON.parse(el('g').value));
+    show(el('letter'), ok ? data.letter : data.error, ok ? '' : 'warn');
+  } catch (e) { show(el('letter'), 'Check the JSON: ' + e.message, 'warn'); }
+};
+</script>
+</body>
+</html>

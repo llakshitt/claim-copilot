@@ -1,0 +1,4 @@
+{
+  "_note": "Empty on purpose. Load CGHS / PM-JAY package rates here, with the source and date for each entry. Format: {\"procedure\": \"name\", \"low\": 0, \"high\": 0, \"source\": \"CGHS 2024 rate list\"}",
+  "rates": []
+}

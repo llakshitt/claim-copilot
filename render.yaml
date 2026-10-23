@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: claim-copilot
+    runtime: python
+    plan: free
+    buildCommand: "echo no dependencies"
+    startCommand: python3 -m app.server
+    healthCheckPath: /health
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
