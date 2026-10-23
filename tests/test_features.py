@@ -164,6 +164,12 @@ class ServerTest(unittest.TestCase):
         code, data = self.post("/api/extract", {"text": "x"})
         self.assertEqual(code, 503)
 
+    def test_cors_headers_and_preflight(self):
+        req = urllib.request.Request(f"http://127.0.0.1:{self.port}/api/estimate", method="OPTIONS")
+        with urllib.request.urlopen(req) as r:
+            self.assertEqual(r.status, 204)
+            self.assertEqual(r.headers["Access-Control-Allow-Origin"], "*")
+
     def test_grievance_endpoint(self):
         code, data = self.post("/api/grievance", {"level": "irdai", "reason": "r"})
         self.assertEqual(code, 200)

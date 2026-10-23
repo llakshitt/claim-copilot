@@ -54,12 +54,16 @@ def audit_bill(lines: list, procedure: Optional[str] = None, reference: Optional
                 f"'{group[0].description}' appears {len(group)} times at Rs {amt}. "
                 "Ask the hospital whether each is a separate service."))
 
+    flagged: set = set()
     for l in lines:
         if l.category == "non_payable":
             continue
         n = _norm(l.description)
+        if n in flagged:
+            continue
         for kw in COMMON_NON_PAYABLE:
             if kw in n:
+                flagged.add(n)
                 findings.append(Finding(
                     "likely_non_payable", l.description,
                     f"'{l.description}' (Rs {l.amount}) is often treated as non-payable. "

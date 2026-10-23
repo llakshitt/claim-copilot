@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claim Copilot</title>
+<meta name="description" content="Check what your health insurer will pay before you settle the hospital bill, and draft a complaint if a claim is cut.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <p class="brand">Claim Copilot</p>
+    <p class="lede">Know what your insurer will pay before you settle the bill.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <nav class="steps" aria-label="Steps">
+    <button class="step is-on" data-go="policy">Policy</button>
+    <button class="step" data-go="bill">Bill</button>
+    <button class="step" data-go="result">Result</button>
+    <button class="step" data-go="letter">Complaint</button>
+  </nav>
+
+  <section id="policy" class="panel is-on" aria-labelledby="h-policy">
+    <h2 id="h-policy">Your policy</h2>
+    <p class="hint">Paste the policy wording and we read the terms for you, or type the numbers yourself. Every value we read comes with the exact words from your policy.</p>
+
+    <label for="policy-text">Policy wording (optional)</label>
+    <textarea id="policy-text" rows="6" placeholder="Paste the text of the policy here"></textarea>
+    <div class="row">
+      <button id="read-policy" class="btn">Read my policy</button>
+      <span id="read-status" class="status" role="status"></span>
+    </div>
+    <div id="citations" class="citations" hidden></div>
+
+    <div class="grid">
+      <div><label for="f-si">Sum insured (Rs)</label><input id="f-si" inputmode="decimal" placeholder="500000"></div>
+      <div><label for="f-cap">Room rent cap per day (Rs)</label><input id="f-cap" inputmode="decimal" placeholder="No cap"></div>
+      <div><label for="f-pct">Room rent cap, % of sum insured</label><input id="f-pct" inputmode="decimal" placeholder="No cap"></div>
+      <div><label for="f-copay">Co-pay (%)</label><input id="f-copay" inputmode="decimal" placeholder="0"></div>
+      <div><label for="f-ded">Deductible (Rs)</label><input id="f-ded" inputmode="decimal" placeholder="0"></div>
+      <div><label for="f-cond">Condition treated</label><input id="f-cond" placeholder="e.g. hernia"></div>
+      <div><label for="f-age">Days since the policy started</label><input id="f-age" inputmode="numeric" placeholder="Only if a waiting period applies"></div>
+    </div>
+    <div class="row">
+      <button class="btn" data-go="bill">Next: enter the bill</button>
+      <button id="sample" class="btn quiet">Fill with a sample</button>
+    </div>
+  </section>
+
+  <section id="bill" class="panel" aria-labelledby="h-bill">
+    <h2 id="h-bill">The hospital bill</h2>
+    <p class="hint">One line per item on the itemized bill. For room charges, add the number of days.</p>
+    <div id="lines" class="lines"></div>
+    <div class="row">
+      <button id="add-line" class="btn quiet">Add a line</button>
+      <label class="inline" for="f-proc">Procedure (optional)</label>
+      <input id="f-proc" placeholder="e.g. knee replacement">
+    </div>
+    <p id="bill-total" class="total"></p>
+    <div class="row">
+      <button id="calc" class="btn">Check the bill</button>
+      <span id="calc-status" class="status" role="status"></span>
+    </div>
+  </section>
+
+  <section id="result" class="panel" aria-labelledby="h-result">
+    <h2 id="h-result">What to expect</h2>
+    <p class="empty" id="result-empty">Enter your policy and bill first, then check the bill.</p>
+    <div id="receipt" class="receipt" hidden></div>
+    <div id="findings" hidden>
+      <h3>Worth asking the hospital</h3>
+      <ul id="findings-list" class="findings"></ul>
+    </div>
+    <p class="fine">This is an estimate from the terms you gave us, not a decision by your insurer. The insurer's own assessment is final.</p>
+    <div class="row"><button class="btn" data-go="letter" id="to-letter" hidden>Draft a complaint</button></div>
+  </section>
+
+  <section id="letter" class="panel" aria-labelledby="h-letter">
+    <h2 id="h-letter">If the claim is rejected or cut</h2>
+    <p class="hint">Start with the insurer. If they do not resolve it, the next steps are IRDAI's grievance system and then the Insurance Ombudsman. Check current time limits before you send.</p>
+    <div class="grid">
+      <div><label for="g-level">Send to</label>
+        <select id="g-level">
+          <option value="insurer_grievance_officer">Insurer's grievance officer</option>
+          <option value="irdai">IRDAI grievance system</option>
+          <option value="ombudsman">Insurance Ombudsman</option>
+        </select></div>
+      <div><label for="g-name">Your name</label><input id="g-name" placeholder="Your name"></div>
+      <div><label for="g-insurer">Insurer</label><input id="g-insurer" placeholder="Insurer name"></div>
+      <div><label for="g-policy">Policy number</label><input id="g-policy" placeholder="Policy number"></div>
+      <div><label for="g-claim">Claim number</label><input id="g-claim" placeholder="Claim number"></div>
+      <div><label for="g-amt">Amount in dispute (Rs)</label><input id="g-amt" inputmode="decimal"></div>
+    </div>
+    <label for="g-reason">Reason the insurer gave</label>
+    <textarea id="g-reason" rows="2" placeholder="Copy the reason from the rejection or deduction letter"></textarea>
+    <div class="row">
+      <button id="draft" class="btn">Write the letter</button>
+      <button id="copy" class="btn quiet" hidden>Copy letter</button>
+      <span id="g-status" class="status" role="status"></span>
+    </div>
+    <pre id="letter-out" class="letter" hidden></pre>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>Claim Copilot gives information, not legal, medical or insurance advice. Do not upload documents that name other people unless you have their permission.</p>
+</footer>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

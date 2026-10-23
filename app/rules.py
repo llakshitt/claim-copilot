@@ -173,9 +173,10 @@ def compute_payout(policy: Policy, claim: Claim) -> Result:
                 running = sum((l.amount for l in payable_lines), Decimal(0))
                 steps.append(Step(
                     "room_rent_proportionate", money(running - before),
-                    f"Room rent is Rs {money(actual_per_day)}/day against a cap of Rs {money(cap)}/day "
-                    f"(ratio {ratio:.4f}). Room is limited to the cap and related charges "
-                    f"({', '.join(sorted(policy.proportionate_categories))}) are scaled by the same ratio.",
+                    f"Your room costs Rs {actual_per_day:,.0f} a day but the policy caps it at Rs {cap:,.0f}. "
+                    f"The room is limited to the cap and related charges "
+                    f"({', '.join(sorted(c.replace('_', ' ') for c in policy.proportionate_categories))}) "
+                    f"are reduced to {ratio * 100:.1f}%.",
                     _clause(policy, "room_rent")))
 
     # 4. category sub-limits
