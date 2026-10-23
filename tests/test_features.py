@@ -83,6 +83,21 @@ class AuditTest(unittest.TestCase):
         self.assertEqual(kinds, ["no_reference"])
 
 
+class ProviderTest(unittest.TestCase):
+    def test_groq_default_and_missing_key(self):
+        import os
+        from app import llm
+        for k in ("GROQ_API_KEY", "GEMINI_API_KEY", "LLM_PROVIDER"):
+            os.environ.pop(k, None)
+        with self.assertRaises(llm.LLMError):
+            llm.default_client()
+        os.environ["GROQ_API_KEY"] = "test"
+        try:
+            self.assertIsInstance(llm.default_client(), llm.GroqClient)
+        finally:
+            os.environ.pop("GROQ_API_KEY")
+
+
 class GrievanceTest(unittest.TestCase):
     def test_draft_contains_clause_and_does_not_invent_deadline(self):
         t = grievance.draft("insurer_grievance_officer", reason="room rent cap", clause_ref="Section 4.2",
@@ -145,6 +160,7 @@ class ServerTest(unittest.TestCase):
     def test_extract_without_key_is_503(self):
         import os
         os.environ.pop("GEMINI_API_KEY", None)
+        os.environ.pop("GROQ_API_KEY", None)
         code, data = self.post("/api/extract", {"text": "x"})
         self.assertEqual(code, 503)
 

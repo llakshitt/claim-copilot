@@ -10,4 +10,4 @@ Independent health-claim helper for India: policy extraction, payout estimate, b
 
 Run: `python3 -m app.server` (PORT env var, default 8000). Test: `python3 -m unittest discover`.
 
-Secrets come from environment variables only (`GEMINI_API_KEY`); never commit keys.
+Secrets come from environment variables only (`GROQ_API_KEY` (or `GEMINI_API_KEY` with `LLM_PROVIDER=gemini`)); never commit keys.
