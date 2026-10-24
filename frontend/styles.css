@@ -291,6 +291,17 @@ dialog { border-radius: 26px; border: 1px solid var(--line); }
   .est-actions .btn, .intro-actions .btn { flex: 1 1 auto; }
 }
 
+/* uploads */
+.drop { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; border: 2px dashed var(--line-strong); border-radius: 20px; background: var(--raised); padding: 16px 18px; margin-bottom: 8px; transition: border-color .15s, background .15s; }
+.drop svg { width: 28px; height: 28px; color: var(--accent); flex: none; }
+.drop div { flex: 1 1 220px; min-width: 0; display: grid; gap: 2px; }
+.drop span { color: var(--muted); font-size: 13px; }
+.drop.over { border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 4px var(--glow); }
+.drop.busy { opacity: .7; }
+.reader { border-style: solid; border-color: var(--line); }
+.reader[open] summary { margin-bottom: 4px; }
+@media (max-width: 640px) { .drop { padding: 14px; } .drop .btn { width: 100%; } }
+
 /* print: only the estimate */
 @media print {
   body { background: #fff; color: #000; }

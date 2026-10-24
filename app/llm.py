@@ -27,6 +27,10 @@ class FakeLLM:
         self.prompts.append(prompt)
         return self.response
 
+    def vision(self, prompt: str, image_data_url: str) -> str:
+        self.prompts.append(prompt)
+        return self.response
+
 
 class GeminiClient:
     def __init__(self, api_key: str | None = None, model: str | None = None, timeout: int = 60):
@@ -86,6 +90,38 @@ class GroqClient:
             raise LLMError(f"Groq returned HTTP {e.code}: {detail}".strip()) from e
         except (urllib.error.URLError, KeyError, IndexError, json.JSONDecodeError) as e:
             raise LLMError(f"Groq request failed: {e}") from e
+
+
+def _groq_post(api_key: str, payload: dict, timeout: int) -> str:
+    req = urllib.request.Request(
+        "https://api.groq.com/openai/v1/chat/completions", data=json.dumps(payload).encode(), method="POST",
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}",
+                 "Accept": "application/json", "User-Agent": "claim-copilot/1.0 (+https://github.com/llakshitt/claim-copilot)"})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.load(resp)
+        return data["choices"][0]["message"]["content"]
+    except urllib.error.HTTPError as e:
+        try:
+            detail = e.read().decode("utf-8", "replace")[:200]
+        except Exception:
+            detail = ""
+        raise LLMError(f"Groq returned HTTP {e.code}: {detail}".strip()) from e
+    except (urllib.error.URLError, KeyError, IndexError, json.JSONDecodeError, TimeoutError) as e:
+        raise LLMError(f"Groq request failed: {e}") from e
+
+
+def _groq_vision(self, prompt: str, image_data_url: str) -> str:
+    model = os.environ.get("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
+    return _groq_post(self.api_key, {
+        "model": model, "temperature": 0, "max_tokens": 4096,
+        "messages": [{"role": "user", "content": [
+            {"type": "text", "text": prompt},
+            {"type": "image_url", "image_url": {"url": image_data_url}}]}],
+    }, max(self.timeout, 90))
+
+
+GroqClient.vision = _groq_vision
 
 
 def default_client():

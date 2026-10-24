@@ -49,12 +49,19 @@
         <div><h2 id="h-policy">Policy terms</h2><p class="sub">From your policy schedule or wording.</p></div>
       </header>
 
-      <details class="reader" id="reader">
-        <summary>Read the terms from my policy text</summary>
+      <details class="reader" id="reader" open>
+        <summary>Upload your policy, or paste its text</summary>
         <div class="reader-body">
-          <label for="policy-text">Paste the policy wording</label>
-          <textarea id="policy-text" rows="6" maxlength="60000" placeholder="Paste text copied from your policy document"></textarea>
-          <p class="note">The text is sent to our server and to an AI provider (Groq) to find the terms. We do not save it. Every value it finds must match your own words, or it is discarded. <button class="link" type="button" data-open="privacy">Details</button></p>
+          <div class="drop" id="drop-policy">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5m0 0l-4 4m4-4l4 4M5 19h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <div><strong>Drop your policy document here</strong><span>PDF, photo, screenshot or .txt. Scanned pages are read automatically.</span></div>
+            <button class="btn accent" id="pick-policy" type="button">Choose files</button>
+            <input type="file" id="policy-file" accept=".pdf,application/pdf,image/*,.txt,text/plain" multiple hidden>
+          </div>
+          <p class="note" id="policy-up-status" role="status"></p>
+          <label for="policy-text">Policy text (you can edit or paste here instead)</label>
+          <textarea id="policy-text" rows="6" maxlength="60000" placeholder="The text read from your document appears here, or paste text copied from your policy"></textarea>
+          <p class="note">Text found inside a PDF is read in your browser. Photos and scanned pages, and the text we then search for terms, are sent to our server and to an AI provider (Groq). We do not save them. Every value found must match your own words, or it is discarded. <button class="link" type="button" data-open="privacy">Details</button></p>
           <div class="row">
             <button id="read-policy" class="btn" type="button">Read terms</button>
             <span id="read-status" class="status" role="status"></span>
@@ -95,6 +102,13 @@
         <span class="num" aria-hidden="true">2</span>
         <div><h2 id="h-bill">Hospital bill</h2><p class="sub">One row per line of the itemized bill. Add the number of days for room charges.</p></div>
       </header>
+      <div class="drop" id="drop-bill">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5m0 0l-4 4m4-4l4 4M5 19h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div><strong>Upload the hospital bill</strong><span>PDF, photo or screenshot of the itemized bill. We fill the rows below for you to check.</span></div>
+        <button class="btn accent" id="pick-bill" type="button">Choose files</button>
+        <input type="file" id="bill-file" accept=".pdf,application/pdf,image/*,.txt,text/plain" multiple hidden>
+      </div>
+      <p class="note" id="bill-up-status" role="status"></p>
       <div class="table-wrap">
         <table class="bill" id="bill">
           <thead><tr><th scope="col">Item</th><th scope="col">Type</th><th scope="col" class="r">Days</th><th scope="col" class="r">Amount (Rs)</th><th scope="col"><span class="sr">Remove</span></th></tr></thead>
@@ -217,6 +231,7 @@
     <ul>
       <li><strong>Estimates and bills.</strong> The numbers you enter are sent to our server to run the calculation. The server does not save them or write them to logs.</li>
       <li><strong>Policy text.</strong> If you use "Read terms", the text is sent to our server and on to an AI provider (Groq) to find the terms. Groq's own terms govern what it does with the text. Leave names, policy numbers and ID numbers out of what you paste.</li>
+      <li><strong>Uploaded documents.</strong> The text inside a PDF is read in your browser. For photos and scanned pages, the page image is sent to our server and on to Groq to read the words. For a bill, the text is then sent the same way to find the line items. Nothing is saved on our side. Do not upload documents that belong to someone who has not agreed.</li>
       <li><strong>Your browser.</strong> Nothing is kept after you close or reload the page.</li>
       <li><strong>Other people.</strong> Only enter details about another person, such as a family member, if you have their permission.</li>
     </ul>

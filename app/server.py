@@ -6,12 +6,17 @@ import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from . import audit, grievance
+from .bills import parse_bill
 from .extract import extract_policy
 from .llm import LLMError, default_client
 from .rules import compute_payout
 from .schema import claim_from_dict, policy_from_dict, result_to_dict
 
 MAX_BODY = 1_000_000
+MAX_IMAGE_BODY = 6_000_000
+IMAGE_PREFIXES = ("data:image/jpeg;base64,", "data:image/png;base64,", "data:image/webp;base64,")
+OCR_PROMPT = ("Transcribe all the text in this document image exactly as written. Keep line breaks, "
+              "table rows on one line each, and every number exactly. Output only the transcribed text.")
 STATIC = os.path.join(os.path.dirname(__file__), "static", "index.html")
 
 
@@ -55,7 +60,23 @@ def handle_extract(body: dict, llm=None) -> dict:
     }
 
 
+def handle_bill_lines(body: dict, llm=None) -> dict:
+    return parse_bill(body["text"], llm or default_client())
+
+
+def handle_ocr(body: dict, llm=None) -> dict:
+    url = body["image"]
+    if not isinstance(url, str) or not url.startswith(IMAGE_PREFIXES):
+        raise ValueError("image must be a JPEG, PNG or WebP data URL")
+    llm = llm or default_client()
+    return {"text": llm.vision(OCR_PROMPT, url).strip()}
+
+
+ROUTE_LIMITS = {"/api/ocr": MAX_IMAGE_BODY}
+
 ROUTES = {
+    "/api/bill-lines": handle_bill_lines,
+    "/api/ocr": handle_ocr,
     "/api/estimate": handle_estimate,
     "/api/audit": handle_audit,
     "/api/grievance": handle_grievance,
@@ -91,7 +112,7 @@ class Handler(BaseHTTPRequestHandler):
         if fn is None:
             return self._send(404, {"error": "not found"})
         length = int(self.headers.get("Content-Length") or 0)
-        if length > MAX_BODY:
+        if length > ROUTE_LIMITS.get(self.path, MAX_BODY):
             return self._send(413, {"error": "body too large"})
         try:
             body = json.loads(self.rfile.read(length) or b"{}")

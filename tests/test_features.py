@@ -178,3 +178,29 @@ class ServerTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BillUploadTest(unittest.TestCase):
+    TEXT = "Room rent 3 days 24,000\nDoctor fees 20,000\nPharmacy 10,000\nTOTAL 54,000"
+
+    def test_keeps_only_amounts_found_in_text(self):
+        from app.bills import parse_bill
+        resp = json.dumps({"lines": [
+            {"description": "Room rent", "category": "room", "amount": 24000, "days": 3},
+            {"description": "Doctor fees", "category": "doctor_fees", "amount": 20000},
+            {"description": "Invented scan", "category": "diagnostics", "amount": 7777},
+            {"description": "Pharmacy", "category": "weird", "amount": "10000"}]})
+        out = parse_bill(self.TEXT, FakeLLM(resp))
+        self.assertEqual([l["amount"] for l in out["lines"]], ["24000", "20000", "10000"])
+        self.assertEqual(out["lines"][0]["days"], 3)
+        self.assertEqual(out["lines"][2]["category"], "other")
+        self.assertEqual(out["rejected"], 1)
+
+    def test_ocr_validates_and_returns_text(self):
+        with self.assertRaises(ValueError):
+            server.handle_ocr({"image": "http://evil/x.png"}, FakeLLM("x"))
+        out = server.handle_ocr({"image": "data:image/jpeg;base64,AAAA"}, FakeLLM("  hello  "))
+        self.assertEqual(out["text"], "hello")
+
+    def test_route_limit_for_images(self):
+        self.assertGreater(server.ROUTE_LIMITS["/api/ocr"], server.MAX_BODY)

@@ -274,6 +274,113 @@
     $("read-policy").disabled = false;
   };
 
+
+  // ---------- document upload (PDF text is read in the browser; images and scans go to the OCR endpoint)
+  const MAX_BYTES = 15 * 1024 * 1024, MAX_OCR_PAGES = 6, MAX_PAGES = 40, MAX_CHARS = 60000;
+  async function canvasToJpeg(canvas) {
+    for (const q of [0.82, 0.65, 0.5]) {
+      const url = canvas.toDataURL("image/jpeg", q);
+      if (url.length < 4_500_000) return url;
+    }
+    throw new Error("That image is too large to read. Try a smaller photo.");
+  }
+  async function imageToJpeg(blob) {
+    let bmp;
+    try { bmp = await createImageBitmap(blob); } catch { throw new Error("This browser cannot open that image. Try a JPEG or PNG, or a screenshot."); }
+    const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(bmp.width * k)); c.height = Math.max(1, Math.round(bmp.height * k));
+    const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(bmp, 0, 0, c.width, c.height);
+    return canvasToJpeg(c);
+  }
+  async function ocr(dataUrl) { return (await api("/api/ocr", { image: dataUrl })).text || ""; }
+  let pdfjsLib = null;
+  async function pdfToText(file, say) {
+    if (!pdfjsLib) {
+      try { pdfjsLib = await import("./vendor/pdf.mjs"); } catch { throw new Error("The PDF reader could not load. Refresh the page, or upload a photo of the pages."); }
+      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL("./vendor/pdf.worker.mjs", location.href).href;
+    }
+    let doc;
+    try { doc = await pdfjsLib.getDocument({ data: await file.arrayBuffer(), isEvalSupported: false }).promise; }
+    catch (e) { throw new Error(e && e.name === "PasswordException" ? "That PDF is password protected. Remove the password and try again." : "We could not open that PDF. Try a photo or screenshot of the pages instead."); }
+    const pages = [], total = Math.min(doc.numPages, MAX_PAGES); let ocrUsed = 0, skipped = 0;
+    for (let n = 1; n <= total; n++) {
+      say("Reading page " + n + " of " + total);
+      const page = await doc.getPage(n);
+      const tc = await page.getTextContent(); let t = "";
+      for (const it of tc.items) { t += it.str; t += it.hasEOL ? "\n" : " "; }
+      t = t.replace(/[ \t]+\n/g, "\n").trim();
+      if (t.length < 30) {
+        if (ocrUsed >= MAX_OCR_PAGES) { skipped++; continue; }
+        ocrUsed++; say("Reading scanned page " + n + " of " + total);
+        const vp0 = page.getViewport({ scale: 1 }), scale = Math.min(2.5, 1600 / Math.max(vp0.width, vp0.height) * 1.0 + 0.0001);
+        const vp = page.getViewport({ scale }), c = document.createElement("canvas"); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+        const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+        await page.render({ canvasContext: g, viewport: vp }).promise;
+        t = (await ocr(await canvasToJpeg(c))).trim();
+      }
+      if (t) pages.push(t);
+    }
+    if (doc.numPages > total) skipped += doc.numPages - total;
+    const out = pages.join("\n\n");
+    return { text: out, note: skipped ? skipped + " page(s) were not read (limit reached)." : "" };
+  }
+  async function fileToText(file, say) {
+    if (file.size > MAX_BYTES) throw new Error(file.name + " is over 15 MB. Try a smaller or compressed copy.");
+    if (file.type === "text/plain" || /\.txt$/i.test(file.name)) return { text: await file.text(), note: "" };
+    if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) return pdfToText(file, say);
+    if (file.type.startsWith("image/")) { say("Reading the image"); return { text: await ocr(await imageToJpeg(file)), note: "" }; }
+    throw new Error(file.name + " is not supported. Use a PDF, a photo or screenshot, or a .txt file.");
+  }
+  async function filesToText(files, say) {
+    const parts = [], notes = [];
+    for (const f of files) {
+      const r = await fileToText(f, (m) => say(files.length > 1 ? f.name + ": " + m : m));
+      if (r.text.trim()) parts.push(r.text.trim()); else notes.push("No readable text found in " + f.name + ".");
+      if (r.note) notes.push(r.note);
+    }
+    return { text: parts.join("\n\n"), notes };
+  }
+  function wireDrop(zoneId, inputId, pickId, handler) {
+    const zone = $(zoneId), input = $(inputId);
+    $(pickId).onclick = () => input.click();
+    input.onchange = () => { const fs = [...input.files]; input.value = ""; if (fs.length) handler(fs); };
+    for (const ev of ["dragenter", "dragover"]) zone.addEventListener(ev, (e) => { e.preventDefault(); zone.classList.add("over"); });
+    for (const ev of ["dragleave", "drop"]) zone.addEventListener(ev, (e) => { e.preventDefault(); zone.classList.remove("over"); });
+    zone.addEventListener("drop", (e) => { const fs = [...(e.dataTransfer?.files || [])]; if (fs.length) handler(fs); });
+  }
+  function busy(zoneId, pickId, on) { $(zoneId).classList.toggle("busy", on); $(pickId).disabled = on; }
+
+  wireDrop("drop-policy", "policy-file", "pick-policy", async (files) => {
+    const st = $("policy-up-status"); busy("drop-policy", "pick-policy", true); st.className = "note";
+    try {
+      const r = await filesToText(files, (m) => { st.textContent = m; });
+      if (!r.text) { st.textContent = r.notes.join(" ") || "No readable text found."; st.className = "note status bad"; }
+      else {
+        const box = $("policy-text"); box.value = (box.value.trim() ? box.value.trim() + "\n\n" : "") + r.text; box.value = box.value.slice(0, MAX_CHARS);
+        st.textContent = "Read " + files.length + " file(s). " + r.notes.join(" ") + " Now finding the terms."; $("read-policy").click();
+      }
+    } catch (e) { st.textContent = friendly(e); st.className = "note status bad"; }
+    busy("drop-policy", "pick-policy", false);
+  });
+
+  wireDrop("drop-bill", "bill-file", "pick-bill", async (files) => {
+    const st = $("bill-up-status"); busy("drop-bill", "pick-bill", true); st.className = "note";
+    try {
+      const r = await filesToText(files, (m) => { st.textContent = m; });
+      if (!r.text) { st.textContent = r.notes.join(" ") || "No readable text found."; st.className = "note status bad"; busy("drop-bill", "pick-bill", false); return; }
+      st.textContent = "Finding the line items. This can take up to a minute.";
+      const d = await api("/api/bill-lines", { text: r.text.slice(0, MAX_CHARS) });
+      if (!d.lines.length) { st.textContent = "We could not find line items with amounts in that document. Type the rows by hand or try a clearer copy."; st.className = "note status bad"; }
+      else {
+        for (const tr of [...$("lines").children]) { const a = tr.querySelector("td:nth-child(4) input").value.trim(), n = tr.querySelector("td:nth-child(1) input").value.trim(); if (!a && !n) tr.remove(); }
+        for (const l of d.lines) addRow({ description: l.description, category: l.category, amount: Number(l.amount), days: l.days });
+        addRow(); changed();
+        st.textContent = "Added " + d.lines.length + " row(s). Check every row against your bill; the type and days are our best guess." + (d.rejected ? " " + d.rejected + " line(s) were ignored because their amount was not found in the document." : "") + (r.notes.length ? " " + r.notes.join(" ") : "");
+      }
+    } catch (e) { st.textContent = friendly(e); st.className = "note status bad"; }
+    busy("drop-bill", "pick-bill", false);
+  });
+
   // ---------- letter
   const letterBody = () => {
     const body = { level: $("g-level").value, reason: $("g-reason").value.trim() };
