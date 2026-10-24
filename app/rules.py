@@ -34,6 +34,22 @@ def D(value) -> Decimal:
     return value if isinstance(value, Decimal) else Decimal(str(value))
 
 
+def inr(value) -> str:
+    """Rupee amount in Indian digit grouping, no trailing .00 (Rs 1,50,000 or Rs 1,062.50)."""
+    d = money(D(value))
+    whole, _, frac = f"{abs(d):f}".partition(".")
+    if len(whole) > 3:
+        head, tail = whole[:-3], whole[-3:]
+        parts = []
+        while len(head) > 2:
+            parts.insert(0, head[-2:]); head = head[:-2]
+        if head:
+            parts.insert(0, head)
+        whole = ",".join(parts + [tail])
+    frac = frac.rstrip("0")
+    return ("-" if d < 0 else "") + whole + ("." + frac.ljust(2, "0") if frac else "")
+
+
 def money(value: Decimal) -> Decimal:
     return value.quantize(PAISE, rounding=ROUND_HALF_UP)
 
@@ -101,6 +117,18 @@ class Result:
     warnings: list
 
 
+def _words(s: str) -> set:
+    import re
+    return set(re.findall(r"[a-z0-9]+", (s or "").lower()))
+
+
+def condition_matches(claim_condition: str, policy_condition: str) -> bool:
+    """True when one description contains all the words of the other, so a policy term 'hernia'
+    matches a claim condition 'inguinal hernia repair' (and the reverse)."""
+    a, b = _words(claim_condition), _words(policy_condition)
+    return bool(a) and bool(b) and (b <= a or a <= b)
+
+
 def _clause(policy: Policy, name: str) -> Optional[Clause]:
     return policy.clauses.get(name)
 
@@ -114,22 +142,23 @@ def compute_payout(policy: Policy, claim: Claim) -> Result:
     # 1. exclusions and waiting periods
     if claim.condition:
         cond = claim.condition.lower()
-        if cond in {c.lower() for c in policy.exclusions}:
+        if any(condition_matches(cond, c) for c in policy.exclusions):
             steps.append(Step(
                 "exclusion", -total_billed,
                 f"'{claim.condition}' is excluded, so nothing is payable.",
                 _clause(policy, "exclusion")))
             return Result(total_billed, Decimal("0.00"), total_billed, steps, warnings)
-        waits = {k.lower(): v for k, v in policy.waiting_period_days.items()}
-        if cond in waits:
+        hit = [(k, v) for k, v in policy.waiting_period_days.items() if condition_matches(cond, k)]
+        if hit:
+            wait = max(v for _, v in hit)
             if claim.days_since_policy_start is None:
                 warnings.append(
-                    f"Waiting period of {waits[cond]} days applies to '{claim.condition}' "
+                    f"Waiting period of {wait} days applies to '{claim.condition}' "
                     "but policy age is unknown; result assumes it has been served.")
-            elif claim.days_since_policy_start < waits[cond]:
+            elif claim.days_since_policy_start < wait:
                 steps.append(Step(
                     "waiting_period", -total_billed,
-                    f"'{claim.condition}' has a {waits[cond]}-day waiting period; the policy "
+                    f"'{claim.condition}' has a {wait}-day waiting period; the policy "
                     f"is only {claim.days_since_policy_start} days old, so nothing is payable.",
                     _clause(policy, "waiting_period")))
                 return Result(total_billed, Decimal("0.00"), total_billed, steps, warnings)
@@ -145,7 +174,7 @@ def compute_payout(policy: Policy, claim: Claim) -> Result:
     if removed:
         steps.append(Step(
             "non_payable", -money(removed),
-            f"Items the insurer does not pay (Rs {money(removed)}) are removed.",
+            f"Items the insurer does not pay (Rs {inr(removed)}) are removed.",
             _clause(policy, "non_payable")))
     running = sum((l.amount for l in payable_lines), Decimal(0))
 
@@ -173,7 +202,7 @@ def compute_payout(policy: Policy, claim: Claim) -> Result:
                 running = sum((l.amount for l in payable_lines), Decimal(0))
                 steps.append(Step(
                     "room_rent_proportionate", money(running - before),
-                    f"Your room costs Rs {actual_per_day:,.0f} a day but the policy caps it at Rs {cap:,.0f}. "
+                    f"Your room costs Rs {inr(actual_per_day)} a day but the policy caps it at Rs {inr(cap)}. "
                     f"The room is limited to the cap and related charges "
                     f"({', '.join(sorted(c.replace('_', ' ') for c in policy.proportionate_categories))}) "
                     f"are reduced to {ratio * 100:.1f}%.",
@@ -191,7 +220,7 @@ def compute_payout(policy: Policy, claim: Claim) -> Result:
             by_cat[cat] = limit
             steps.append(Step(
                 f"sub_limit:{cat}", -money(cut),
-                f"'{cat}' charges are limited to Rs {money(limit)}.",
+                f"'{cat}' charges are limited to Rs {inr(limit)}.",
                 _clause(policy, f"sub_limit:{cat}")))
 
     # 5. co-pay
@@ -211,7 +240,7 @@ def compute_payout(policy: Policy, claim: Claim) -> Result:
         running -= cut
         steps.append(Step(
             "deductible", -money(cut),
-            f"Deductible of Rs {money(ded)} applies.",
+            f"Deductible of Rs {inr(ded)} applies.",
             _clause(policy, "deductible")))
 
     # 7. sum insured cap
@@ -221,7 +250,7 @@ def compute_payout(policy: Policy, claim: Claim) -> Result:
         running = si
         steps.append(Step(
             "sum_insured", -money(cut),
-            f"Payable is capped at the sum insured of Rs {money(si)}.",
+            f"Payable is capped at the sum insured of Rs {inr(si)}.",
             _clause(policy, "sum_insured")))
 
     payable = money(max(running, Decimal(0)))

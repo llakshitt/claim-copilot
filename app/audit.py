@@ -6,6 +6,8 @@ import os
 import re
 from dataclasses import dataclass
 from decimal import Decimal
+
+from .rules import inr
 from typing import Optional
 
 # Items insurers commonly treat as non-payable. Always check against the policy's own list.
@@ -51,7 +53,7 @@ def audit_bill(lines: list, procedure: Optional[str] = None, reference: Optional
         if len(group) > 1:
             findings.append(Finding(
                 "possible_duplicate", group[0].description,
-                f"'{group[0].description}' appears {len(group)} times at Rs {amt}. "
+                f"'{group[0].description}' appears {len(group)} times at Rs {inr(amt)}. "
                 "Ask the hospital whether each is a separate service."))
 
     flagged: set = set()
@@ -66,7 +68,7 @@ def audit_bill(lines: list, procedure: Optional[str] = None, reference: Optional
                 flagged.add(n)
                 findings.append(Finding(
                     "likely_non_payable", l.description,
-                    f"'{l.description}' (Rs {l.amount}) is often treated as non-payable. "
+                    f"'{l.description}' (Rs {inr(l.amount)}) is often treated as non-payable. "
                     "Check the policy's non-payable list before expecting it to be covered.",
                     "info"))
                 break

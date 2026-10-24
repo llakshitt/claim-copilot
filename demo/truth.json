@@ -1,0 +1,106 @@
+{
+ "sum_insured": 500000,
+ "room_rent_cap_pct_of_si": 1,
+ "copay_pct": 10,
+ "deductible": 2000,
+ "sub_limits": {
+  "diagnostics": 15000
+ },
+ "waiting_period_days": {
+  "hernia": 730,
+  "cataract": 365
+ },
+ "lines": [
+  {
+   "description": "Room rent, deluxe room (4 days at Rs 8,000)",
+   "category": "room",
+   "amount": 32000,
+   "days": 4
+  },
+  {
+   "description": "Surgeon fees, hernia repair",
+   "category": "surgery",
+   "amount": 45000,
+   "days": null
+  },
+  {
+   "description": "Anaesthetist fees",
+   "category": "doctor_fees",
+   "amount": 12000,
+   "days": null
+  },
+  {
+   "description": "Consultant doctor visits",
+   "category": "doctor_fees",
+   "amount": 8000,
+   "days": null
+  },
+  {
+   "description": "Operation theatre charges",
+   "category": "ot_charges",
+   "amount": 15000,
+   "days": null
+  },
+  {
+   "description": "Nursing charges",
+   "category": "nursing",
+   "amount": 6000,
+   "days": null
+  },
+  {
+   "description": "Blood tests",
+   "category": "diagnostics",
+   "amount": 4200,
+   "days": null
+  },
+  {
+   "description": "Ultrasound abdomen",
+   "category": "diagnostics",
+   "amount": 3500,
+   "days": null
+  },
+  {
+   "description": "CT scan abdomen",
+   "category": "diagnostics",
+   "amount": 18000,
+   "days": null
+  },
+  {
+   "description": "Pharmacy and medicines",
+   "category": "pharmacy",
+   "amount": 14650,
+   "days": null
+  },
+  {
+   "description": "Surgical mesh and sutures",
+   "category": "consumables",
+   "amount": 8400,
+   "days": null
+  },
+  {
+   "description": "Registration charges",
+   "category": "non_payable",
+   "amount": 500,
+   "days": null
+  },
+  {
+   "description": "Admission kit",
+   "category": "non_payable",
+   "amount": 1200,
+   "days": null
+  },
+  {
+   "description": "Disposable gloves",
+   "category": "consumables",
+   "amount": 400,
+   "days": null
+  },
+  {
+   "description": "Disposable gloves",
+   "category": "consumables",
+   "amount": 400,
+   "days": null
+  }
+ ],
+ "total": 169250
+}

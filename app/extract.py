@@ -16,18 +16,23 @@ from .schema import policy_from_dict
 
 PROMPT = """You are extracting terms from a health insurance policy. Return ONLY JSON.
 For every item include "quote": the exact words copied from the policy that support it,
-and "page" if known. Omit anything the policy does not state. Never guess.
+"section": the clause number as printed (for example "Section 3.1") if shown, and "page" if known.
+Omit anything the policy does not state. Never guess.
+A room rent limit written as a percentage of the sum insured goes in room_rent_cap_pct_of_si
+(for "1%" the value is 1); one written in rupees goes in room_rent_cap_per_day.
+For sub_limits, "category" must be one of: room, doctor_fees, surgery, ot_charges, nursing,
+diagnostics, procedure, pharmacy, consumables.
 
 Schema:
 {{
- "sum_insured": {{"value": number, "quote": str, "page": int}},
- "room_rent_cap_per_day": {{"value": number, "quote": str, "page": int}},
- "room_rent_cap_pct_of_si": {{"value": number, "quote": str, "page": int}},
- "copay_pct": {{"value": number, "quote": str, "page": int}},
- "deductible": {{"value": number, "quote": str, "page": int}},
- "sub_limits": [{{"category": str, "value": number, "quote": str, "page": int}}],
- "waiting_period_days": [{{"condition": str, "value": number, "quote": str, "page": int}}],
- "exclusions": [{{"condition": str, "quote": str, "page": int}}]
+ "sum_insured": {{"value": number, "quote": str, "section": str, "page": int}},
+ "room_rent_cap_per_day": {{"value": number, "quote": str, "section": str, "page": int}},
+ "room_rent_cap_pct_of_si": {{"value": number, "quote": str, "section": str, "page": int}},
+ "copay_pct": {{"value": number, "quote": str, "section": str, "page": int}},
+ "deductible": {{"value": number, "quote": str, "section": str, "page": int}},
+ "sub_limits": [{{"category": str, "value": number, "quote": str, "section": str, "page": int}}],
+ "waiting_period_days": [{{"condition": str, "value": number, "quote": str, "section": str, "page": int}}],
+ "exclusions": [{{"condition": str, "quote": str, "section": str, "page": int}}]
 }}
 
 POLICY TEXT:
@@ -35,6 +40,29 @@ POLICY TEXT:
 """
 
 SCALARS = ["sum_insured", "room_rent_cap_per_day", "room_rent_cap_pct_of_si", "copay_pct", "deductible"]
+
+
+CATEGORY_WORDS = [  # (category, substrings that identify it)
+    ("diagnostics", ("diagnos", "investigat", "test", "scan", "lab", "radiolog", "imaging", "pathology")),
+    ("pharmacy", ("pharmac", "medicine", "drug")),
+    ("consumables", ("consumable", "disposable")),
+    ("ot_charges", ("ot_", "theatre", "theater", "ot charge")),
+    ("nursing", ("nursing",)),
+    ("surgery", ("surg",)),
+    ("doctor_fees", ("doctor", "consult", "physician", "specialist", "professional")),
+    ("procedure", ("procedure",)),
+    ("room", ("room", "bed", "boarding")),
+]
+LABELS = {"sum_insured": "Sum insured", "room_rent_cap_per_day": "Room rent", "room_rent_cap_pct_of_si": "Room rent",
+          "copay_pct": "Co-payment", "deductible": "Deductible"}
+
+
+def normalize_category(raw: str):
+    s = _norm(raw).replace("-", "_")
+    for cat, words in CATEGORY_WORDS:
+        if s == cat or any(w in s for w in words):
+            return cat
+    return None
 
 
 def _norm(s: str) -> str:
@@ -76,7 +104,8 @@ def extract_policy(text: str, llm) -> Extraction:
         if not quote_in_text(item["quote"], text):
             rejected.append((field_name, "quote not found in policy text"))
             return False
-        clauses[clause_name] = {"ref": field_name, "text": item["quote"], "page": item.get("page")}
+        label = item.get("section") or LABELS.get(field_name) or field_name.replace("_", " ").replace(":", ": ").capitalize()
+        clauses[clause_name] = {"ref": str(label)[:60], "text": item["quote"], "page": item.get("page")}
         return True
 
     for f in SCALARS:
@@ -87,8 +116,12 @@ def extract_policy(text: str, llm) -> Extraction:
                 out[f] = data[f].get("value")
 
     for it in data.get("sub_limits") or []:
-        if accept(it, f"sub_limit:{it.get('category')}", f"sub_limit:{it.get('category')}"):
-            out.setdefault("sub_limits", {})[it["category"]] = it["value"]
+        cat = normalize_category(str(it.get("category", ""))) if isinstance(it, dict) else None
+        if cat is None:
+            rejected.append((f"sub_limit:{it.get('category') if isinstance(it, dict) else it}", "category not supported"))
+            continue
+        if accept(it, f"sub_limit:{cat}", f"sub_limit:{cat}"):
+            out.setdefault("sub_limits", {})[cat] = it["value"]
     for it in data.get("waiting_period_days") or []:
         if accept(it, f"waiting_period:{it.get('condition')}", "waiting_period"):
             out.setdefault("waiting_period_days", {})[it["condition"]] = it["value"]

@@ -204,3 +204,24 @@ class BillUploadTest(unittest.TestCase):
 
     def test_route_limit_for_images(self):
         self.assertGreater(server.ROUTE_LIMITS["/api/ocr"], server.MAX_BODY)
+
+
+class MatchingTest(unittest.TestCase):
+    def test_condition_matching_is_word_based(self):
+        from app.rules import condition_matches
+        self.assertTrue(condition_matches("Inguinal hernia repair", "hernia"))
+        self.assertTrue(condition_matches("hernia", "inguinal hernia"))
+        self.assertFalse(condition_matches("cataract", "hernia"))
+        self.assertFalse(condition_matches("", "hernia"))
+
+    def test_sub_limit_category_is_normalised_and_unknown_rejected(self):
+        text = "Section 5.1: Diagnostic and investigation charges are limited to Rs 15,000 per claim. Sum insured under this policy is Rs 5,00,000."
+        resp = json.dumps({"sum_insured": {"value": 500000, "quote": "Sum insured under this policy is Rs 5,00,000", "section": "Section 2.1"},
+                           "sub_limits": [{"category": "Diagnostic charges", "value": 15000,
+                                           "quote": "Diagnostic and investigation charges are limited to Rs 15,000 per claim", "section": "Section 5.1"},
+                                          {"category": "Ambulance", "value": 2000, "quote": "Diagnostic and investigation charges", "section": "x"}]})
+        ex = extract_policy(text, FakeLLM(resp))
+        self.assertEqual(ex.policy.sub_limits, {"diagnostics": D(15000)})
+        self.assertEqual(ex.policy.clauses["sub_limit:diagnostics"].ref, "Section 5.1")
+        self.assertEqual(ex.policy.clauses["sum_insured"].ref, "Section 2.1")
+        self.assertTrue(any("not supported" in r[1] for r in ex.rejected))

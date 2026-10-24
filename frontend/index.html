@@ -10,65 +10,72 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<a class="skip" href="#workspace">Skip to the form</a>
+<a class="skip" href="#main">Skip to the content</a>
 
 <header class="appbar">
   <div class="appbar-in">
-    <a class="brand" href="./" aria-label="Claim Copilot home">
+    <a class="brand" href="#start" aria-label="Claim Copilot home">
       <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="10" fill="currentColor"/><path d="M9 9h14M9 14h9M9 19h6" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M17 22.5l3 3 6-7" stroke="#9ef0c4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
       <span>Claim Copilot</span>
     </a>
     <div class="appbar-r">
       <p id="api-status" class="pill" data-state="checking" role="status"><span class="dot" aria-hidden="true"></span><span id="api-status-text">Connecting to the server</span></p>
-      <button class="link" id="open-method" type="button">How this works</button>
+      <button class="link" id="open-method" type="button">How it works</button>
     </div>
   </div>
 </header>
 
-<main class="layout">
-  <div class="workspace" id="workspace">
-    <div class="hero">
-      <span class="eyebrow"><i>Free</i> Estimate before you pay</span>
-      <h1><b>Check a claim</b> <em>before</em> you pay the hospital</h1>
-      <p class="lead">Enter your policy terms and the itemized bill. See what the insurer will likely pay, what you will owe, and the policy clause behind every deduction.</p>
-      <div class="intro-actions">
-        <button class="btn accent" id="sample" type="button">Load an example case</button>
-        <button class="btn quiet" id="reset" type="button">Clear everything</button>
-      </div>
+<nav class="stepper" id="stepper" aria-label="Progress" hidden>
+  <ol>
+    <li><button type="button" data-go="policy"><span class="n">1</span><span class="t">Policy</span></button></li>
+    <li><button type="button" data-go="bill"><span class="n">2</span><span class="t">Bill</span></button></li>
+    <li><button type="button" data-go="details"><span class="n">3</span><span class="t">Details</span></button></li>
+    <li><button type="button" data-go="result"><span class="n">4</span><span class="t">Estimate</span></button></li>
+  </ol>
+</nav>
+
+<main id="main" class="main" tabindex="-1">
+
+  <!-- START -->
+  <section class="screen" id="s-start" data-screen="start" aria-labelledby="h-start">
+    <span class="eyebrow"><i>Free</i> Check a claim before you pay</span>
+    <h1 id="h-start"><b>Know what your insurer will pay</b> <em>before</em> you pay the hospital</h1>
+    <p class="lead">Upload your policy and the hospital bill. We estimate what the insurer pays and what you owe, show the policy sentence behind every deduction, and help you write a complaint if a claim is cut.</p>
+    <div class="cta-row">
+      <button class="btn accent big" type="button" data-go="policy">Start a check</button>
+      <button class="btn quiet big" type="button" id="demo">Try the demo case</button>
     </div>
+    <p class="note" id="demo-hint">The demo uses a made-up policy and hospital bill, run through the same steps as your own documents.</p>
+    <ol class="how">
+      <li><span class="n">1</span><div><strong>Add your policy</strong><span>Upload the PDF or a photo. We find the sum insured, room limit, co-pay and more.</span></div></li>
+      <li><span class="n">2</span><div><strong>Add the hospital bill</strong><span>Upload the itemized bill. The rows fill in for you to check.</span></div></li>
+      <li><span class="n">3</span><div><strong>Get the estimate</strong><span>See what is paid, what is cut and why, then print it or draft a complaint.</span></div></li>
+    </ol>
+  </section>
 
-    <section class="kpis" aria-label="Live summary" id="kpis">
-      <div class="kpi is-bill"><div class="kpi-top"><span class="kpi-l">Hospital bill</span></div><div class="kpi-v" id="k-bill">Rs 0</div><div class="kpi-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
-      <div class="kpi is-pay"><div class="kpi-top"><span class="kpi-l">Insurer pays</span><span class="chipx" id="k-pay-pct"></span></div><div class="kpi-v" id="k-pay">Not yet</div><div class="kpi-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
-      <div class="kpi is-you"><div class="kpi-top"><span class="kpi-l">You pay</span><span class="chipx" id="k-you-pct"></span></div><div class="kpi-v" id="k-you">Not yet</div><div class="kpi-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
-    </section>
+  <!-- POLICY -->
+  <section class="screen" id="s-policy" data-screen="policy" hidden aria-labelledby="h-policy">
+    <header class="screen-h"><p class="step-l">Step 1 of 4</p><h2 id="h-policy">Your policy</h2><p class="sub">Upload the policy wording. We read the terms and show where each one came from.</p></header>
 
-    <section class="card" aria-labelledby="h-policy">
-      <header class="card-h">
-        <span class="num" aria-hidden="true">1</span>
-        <div><h2 id="h-policy">Policy terms</h2><p class="sub">From your policy schedule or wording.</p></div>
-      </header>
+    <div class="drop" id="drop-policy">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5m0 0l-4 4m4-4l4 4M5 19h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><strong>Drop the policy document here</strong><span>PDF, photo, screenshot or .txt. Scanned pages are read automatically.</span></div>
+      <button class="btn accent" id="pick-policy" type="button">Choose files</button>
+      <input type="file" id="policy-file" accept=".pdf,application/pdf,image/*,.txt,text/plain" multiple hidden>
+    </div>
+    <p class="note" id="policy-up-status" role="status"></p>
 
-      <details class="reader" id="reader" open>
-        <summary>Upload your policy, or paste its text</summary>
-        <div class="reader-body">
-          <div class="drop" id="drop-policy">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5m0 0l-4 4m4-4l4 4M5 19h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <div><strong>Drop your policy document here</strong><span>PDF, photo, screenshot or .txt. Scanned pages are read automatically.</span></div>
-            <button class="btn accent" id="pick-policy" type="button">Choose files</button>
-            <input type="file" id="policy-file" accept=".pdf,application/pdf,image/*,.txt,text/plain" multiple hidden>
-          </div>
-          <p class="note" id="policy-up-status" role="status"></p>
-          <label for="policy-text">Policy text (you can edit or paste here instead)</label>
-          <textarea id="policy-text" rows="6" maxlength="60000" placeholder="The text read from your document appears here, or paste text copied from your policy"></textarea>
-          <p class="note">Text found inside a PDF is read in your browser. Photos and scanned pages, and the text we then search for terms, are sent to our server and to an AI provider (Groq). We do not save them. Every value found must match your own words, or it is discarded. <button class="link" type="button" data-open="privacy">Details</button></p>
-          <div class="row">
-            <button id="read-policy" class="btn" type="button">Read terms</button>
-            <span id="read-status" class="status" role="status"></span>
-          </div>
-        </div>
-      </details>
+    <details class="reader" id="reader">
+      <summary>Paste the policy text instead</summary>
+      <div class="reader-body">
+        <label for="policy-text">Policy text</label>
+        <textarea id="policy-text" rows="6" maxlength="60000" placeholder="Paste text copied from your policy document"></textarea>
+        <div class="row"><button id="read-policy" class="btn" type="button">Read terms</button><span id="read-status" class="status" role="status"></span></div>
+      </div>
+    </details>
 
+    <section class="panel" aria-labelledby="h-terms">
+      <h3 id="h-terms">Terms we will use <span class="opt">check them against your policy</span></h3>
       <div class="grid">
         <div class="field"><label for="f-si">Sum insured <span class="req">required</span></label>
           <div class="affix"><span>Rs</span><input id="f-si" inputmode="decimal" autocomplete="off" aria-describedby="e-si"></div>
@@ -76,7 +83,7 @@
         <div class="field"><label for="f-cap">Room rent cap per day</label>
           <div class="affix"><span>Rs</span><input id="f-cap" inputmode="decimal" autocomplete="off" placeholder="No cap" aria-describedby="e-cap"></div>
           <p class="err" id="e-cap" hidden></p></div>
-        <div class="field"><label for="f-pct">Room rent cap as % of sum insured</label>
+        <div class="field"><label for="f-pct">Room rent cap, % of sum insured</label>
           <div class="affix"><input id="f-pct" inputmode="decimal" autocomplete="off" placeholder="No cap" aria-describedby="e-pct"><span class="after">%</span></div>
           <p class="err" id="e-pct" hidden></p></div>
         <div class="field"><label for="f-copay">Co-pay</label>
@@ -86,29 +93,30 @@
           <div class="affix"><span>Rs</span><input id="f-ded" inputmode="decimal" autocomplete="off" placeholder="0" aria-describedby="e-ded"></div>
           <p class="err" id="e-ded" hidden></p></div>
       </div>
-
       <div id="terms" class="terms" hidden>
-        <h3>Other terms found in your policy</h3>
+        <h4>Other terms found</h4>
         <ul id="terms-list" class="chips"></ul>
       </div>
       <div id="citations" class="citations" hidden>
-        <h3>Where each value came from</h3>
+        <h4>Where each value came from</h4>
         <ul id="citations-list"></ul>
       </div>
     </section>
+  </section>
 
-    <section class="card" aria-labelledby="h-bill">
-      <header class="card-h">
-        <span class="num" aria-hidden="true">2</span>
-        <div><h2 id="h-bill">Hospital bill</h2><p class="sub">One row per line of the itemized bill. Add the number of days for room charges.</p></div>
-      </header>
-      <div class="drop" id="drop-bill">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5m0 0l-4 4m4-4l4 4M5 19h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <div><strong>Upload the hospital bill</strong><span>PDF, photo or screenshot of the itemized bill. We fill the rows below for you to check.</span></div>
-        <button class="btn accent" id="pick-bill" type="button">Choose files</button>
-        <input type="file" id="bill-file" accept=".pdf,application/pdf,image/*,.txt,text/plain" multiple hidden>
-      </div>
-      <p class="note" id="bill-up-status" role="status"></p>
+  <!-- BILL -->
+  <section class="screen" id="s-bill" data-screen="bill" hidden aria-labelledby="h-bill">
+    <header class="screen-h"><p class="step-l">Step 2 of 4</p><h2 id="h-bill">Hospital bill</h2><p class="sub">Upload the itemized bill. Check each row, and add the number of days for room charges.</p></header>
+
+    <div class="drop" id="drop-bill">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5m0 0l-4 4m4-4l4 4M5 19h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><strong>Drop the hospital bill here</strong><span>PDF, photo or screenshot of the itemized bill.</span></div>
+      <button class="btn accent" id="pick-bill" type="button">Choose files</button>
+      <input type="file" id="bill-file" accept=".pdf,application/pdf,image/*,.txt,text/plain" multiple hidden>
+    </div>
+    <p class="note" id="bill-up-status" role="status"></p>
+
+    <section class="panel">
       <div class="table-wrap">
         <table class="bill" id="bill">
           <thead><tr><th scope="col">Item</th><th scope="col">Type</th><th scope="col" class="r">Days</th><th scope="col" class="r">Amount (Rs)</th><th scope="col"><span class="sr">Remove</span></th></tr></thead>
@@ -117,63 +125,81 @@
         </table>
       </div>
       <p class="err" id="e-bill" hidden></p>
-      <div class="row"><button id="add-line" class="btn quiet" type="button">Add a row</button><span class="note">Tip: press Enter in the amount to add the next row.</span></div>
+      <div class="row"><button id="add-line" class="btn quiet" type="button">Add a row</button><span class="note">Press Enter in an amount to add the next row.</span></div>
     </section>
+  </section>
 
-    <section class="card" aria-labelledby="h-claim">
-      <header class="card-h">
-        <span class="num" aria-hidden="true">3</span>
-        <div><h2 id="h-claim">About this claim <span class="opt">optional</span></h2><p class="sub">Helps check waiting periods and hospital prices.</p></div>
-      </header>
-      <div class="grid">
+  <!-- DETAILS -->
+  <section class="screen" id="s-details" data-screen="details" hidden aria-labelledby="h-claim">
+    <header class="screen-h"><p class="step-l">Step 3 of 4</p><h2 id="h-claim">About this claim</h2><p class="sub">Optional. These help check waiting periods and exclusions.</p></header>
+    <section class="panel">
+      <div class="grid one">
         <div class="field"><label for="f-cond">Condition treated</label><input id="f-cond" autocomplete="off" placeholder="For example, hernia"></div>
         <div class="field"><label for="f-age">Days since your policy started</label><input id="f-age" inputmode="numeric" autocomplete="off" placeholder="For waiting periods" aria-describedby="e-age"><p class="err" id="e-age" hidden></p></div>
         <div class="field"><label for="f-proc">Procedure name</label><input id="f-proc" autocomplete="off" placeholder="For price comparison"></div>
       </div>
     </section>
-  </div>
+  </section>
 
-  <aside class="estimate" id="estimate" aria-labelledby="h-est">
-    <div class="est-in">
-      <div class="est-head"><h2 id="h-est">Estimate</h2><span id="est-state" class="est-state" role="status"></span></div>
+  <!-- RESULT -->
+  <section class="screen wide" id="s-result" data-screen="result" hidden aria-labelledby="h-est">
+    <header class="screen-h"><p class="step-l">Step 4 of 4</p><h2 id="h-est">Your estimate</h2><p class="sub"><span id="demo-note" hidden>Demo case: the documents are made up. </span><span id="est-state" class="est-state" role="status"></span></p></header>
 
-      <div id="est-empty" class="empty">
-        <p class="empty-t">Your estimate appears here</p>
-        <p>Add the sum insured and at least one bill row. The estimate updates as you type.</p>
-      </div>
-      <div id="est-error" class="est-error" hidden role="alert"><p id="est-error-text"></p><button id="est-retry" class="btn quiet" type="button">Try again</button></div>
+    <div id="est-empty" class="empty">
+      <p class="empty-t">We need a little more first</p>
+      <p id="empty-why">Add the sum insured and at least one bill row to see the estimate.</p>
+      <div class="row"><button class="btn accent" type="button" data-go="policy">Go to the policy</button><button class="btn quiet" type="button" data-go="bill">Go to the bill</button></div>
+    </div>
+    <div id="est-error" class="est-error" hidden role="alert"><p id="est-error-text"></p><button id="est-retry" class="btn quiet" type="button">Try again</button></div>
 
-      <div id="est-body" hidden>
-        <div class="print-only print-head"><strong>Claim Copilot estimate</strong><span id="print-date"></span></div>
-        <div class="split" aria-hidden="true"><span id="bar-pay"></span><span id="bar-you"></span></div>
-        <p class="legend"><span class="a"><i></i>Insurer</span><span class="b"><i></i>You</span></p>
-        <div class="receipt" id="receipt"></div>
+    <div id="est-body" hidden>
+      <div class="print-only print-head"><strong>Claim Copilot estimate</strong><span id="print-date"></span></div>
+      <section class="kpis" aria-label="Summary" id="kpis">
+        <div class="kpi is-bill"><div class="kpi-top"><span class="kpi-l">Hospital bill</span></div><div class="kpi-v" id="k-bill">Rs 0</div></div>
+        <div class="kpi is-pay"><div class="kpi-top"><span class="kpi-l">Insurer pays about</span><span class="chipx" id="k-pay-pct"></span></div><div class="kpi-v" id="k-pay">Not yet</div></div>
+        <div class="kpi is-you"><div class="kpi-top"><span class="kpi-l">You pay about</span><span class="chipx" id="k-you-pct"></span></div><div class="kpi-v" id="k-you">Not yet</div></div>
+      </section>
+      <div class="split" aria-hidden="true"><span id="bar-pay"></span><span id="bar-you"></span></div>
+      <p class="legend"><span class="a"><i></i>Insurer</span><span class="b"><i></i>You</span></p>
 
-        <div id="findings" class="findings" hidden>
-          <h3>Worth asking the hospital</h3>
-          <ul id="findings-list"></ul>
-        </div>
-
-        <details class="used" id="used"><summary>Terms used for this estimate</summary><dl id="used-list"></dl></details>
-
-        <p class="fine">An estimate from the terms you entered, not a decision by your insurer. The insurer's own assessment is final.</p>
-        <div class="est-actions">
-          <button class="btn" id="open-letter" type="button">Draft a complaint</button>
-          <button class="btn quiet" id="print" type="button">Print or save as PDF</button>
+      <div class="result-grid">
+        <section class="panel">
+          <h3>How we got there</h3>
+          <div class="receipt" id="receipt"></div>
+          <details class="used" id="used"><summary>Terms used for this estimate</summary><dl id="used-list"></dl></details>
+        </section>
+        <div class="side">
+          <section class="panel" id="findings" hidden>
+            <h3>Worth asking the hospital</h3>
+            <ul id="findings-list"></ul>
+          </section>
+          <section class="panel">
+            <h3>Next steps</h3>
+            <p class="fine">An estimate from the terms you entered, not a decision by your insurer. The insurer's own assessment is final.</p>
+            <div class="est-actions">
+              <button class="btn accent" id="open-letter" type="button">Draft a complaint</button>
+              <button class="btn quiet" id="print" type="button">Print or save as PDF</button>
+              <button class="btn quiet" type="button" data-go="bill">Edit the bill</button>
+              <button class="btn text" id="reset" type="button">Start a new check</button>
+            </div>
+          </section>
         </div>
       </div>
     </div>
-  </aside>
+  </section>
 </main>
 
-<div class="mbar" id="mbar" hidden>
-  <div><span class="mbar-l">Insurer pays about</span><strong id="mbar-v"></strong></div>
-  <a class="btn" href="#estimate">See estimate</a>
+<div class="stepnav" id="stepnav" hidden>
+  <div class="stepnav-in">
+    <button class="btn quiet" id="nav-back" type="button">Back</button>
+    <span class="hint" id="nav-hint" role="status"></span>
+    <button class="btn accent" id="nav-next" type="button">Continue</button>
+  </div>
 </div>
 
 <footer class="foot">
   <p>Claim Copilot gives information, not legal, medical or insurance advice. Estimates depend on the terms you enter. Reference price ranges are not yet loaded, so prices are not compared.</p>
-  <p><button class="link" type="button" data-open="privacy">Privacy and data handling</button> · <button class="link" type="button" data-open="method">How estimates are calculated</button></p>
+  <p><button class="link plain" type="button" data-open="privacy">Privacy and data handling</button> · <button class="link plain" type="button" data-open="method">How estimates are calculated</button></p>
 </footer>
 
 <dialog id="dlg-letter" aria-labelledby="h-letter">
