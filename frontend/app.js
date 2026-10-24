@@ -148,7 +148,7 @@
       lines.push(line);
     }
     const err = $("e-bill"); err.hidden = ok; if (!ok) err.textContent = "Check the highlighted rows: amounts must be numbers and days whole numbers.";
-    $("bill-total").textContent = rs(lines.reduce((s, l) => s + l.amount, 0));
+    $("bill-total").textContent = rs(lines.reduce((s, l) => s + l.amount, 0)); $("k-bill").textContent = $("bill-total").textContent;
     return { lines, ok };
   }
 
@@ -159,6 +159,19 @@
   function showOnly(which) {
     $("est-empty").hidden = which !== "empty"; $("est-error").hidden = which !== "error"; $("est-body").hidden = which !== "body";
     $("mbar").hidden = which !== "body";
+    if (which !== "body") setKpis(null);
+  }
+  function setKpis(est) {
+    const set = (id, t) => { $(id).textContent = t; };
+    const bars = (card, frac) => { const els = card.querySelectorAll(".kpi-bars i"); els.forEach((el, i) => { const on = frac != null && i < Math.round(frac * els.length); el.classList.toggle("on", on); el.style.height = frac == null ? "30%" : (30 + (i + 1) / els.length * 70 * (on ? 1 : .35)) + "%"; }); };
+    const cards = document.querySelectorAll("#kpis .kpi");
+    if (!est) { set("k-bill", $("bill-total").textContent); set("k-pay", "Not yet"); set("k-you", "Not yet"); cards.forEach((c) => { c.classList.remove("live"); bars(c, null); }); return; }
+    const total = Number(est.total_billed), pay = Number(est.payable), you = Number(est.patient_pays);
+    const pp = total ? Math.round(pay / total * 100) : 0;
+    set("k-bill", rs(total)); set("k-pay", rs(pay)); set("k-you", rs(you));
+    set("k-pay-pct", pp + "%"); set("k-you-pct", (100 - pp) + "%");
+    cards.forEach((c) => c.classList.add("live"));
+    bars(cards[0], 1); bars(cards[1], total ? pay / total : 0); bars(cards[2], total ? you / total : 0);
   }
   async function refresh() {
     const c = collect();
@@ -198,6 +211,7 @@
     for (const f of findings) list.append(h("li", { text: f.detail }));
     $("findings").hidden = findings.length === 0;
     $("mbar-v").textContent = rs(pay);
+    setKpis(est);
     const used = $("used-list"); used.replaceChildren();
     const add = (k, v) => { used.append(h("dt", { text: k }), h("dd", { text: v })); };
     const p = c.policy;

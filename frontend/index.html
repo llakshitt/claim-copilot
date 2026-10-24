@@ -15,7 +15,7 @@
 <header class="appbar">
   <div class="appbar-in">
     <a class="brand" href="./" aria-label="Claim Copilot home">
-      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="currentColor"/><path d="M9 9h14M9 14h9M9 19h6" stroke="var(--bg)" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M17 22.5l3 3 6-7" stroke="var(--pay)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="10" fill="currentColor"/><path d="M9 9h14M9 14h9M9 19h6" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M17 22.5l3 3 6-7" stroke="#9ef0c4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
       <span>Claim Copilot</span>
     </a>
     <div class="appbar-r">
@@ -27,14 +27,21 @@
 
 <main class="layout">
   <div class="workspace" id="workspace">
-    <div class="intro">
-      <h1>Check a health insurance claim before you pay</h1>
-      <p>Enter your policy terms and the hospital's itemized bill. You get an estimate of what the insurer will pay and what you will owe, with the policy clause behind every deduction.</p>
+    <div class="hero">
+      <span class="eyebrow"><i>Free</i> Estimate before you pay</span>
+      <h1><b>Check a claim</b> <em>before</em> you pay the hospital</h1>
+      <p class="lead">Enter your policy terms and the itemized bill. See what the insurer will likely pay, what you will owe, and the policy clause behind every deduction.</p>
       <div class="intro-actions">
-        <button class="btn quiet" id="sample" type="button">Load an example case</button>
-        <button class="btn text" id="reset" type="button">Clear everything</button>
+        <button class="btn accent" id="sample" type="button">Load an example case</button>
+        <button class="btn quiet" id="reset" type="button">Clear everything</button>
       </div>
     </div>
+
+    <section class="kpis" aria-label="Live summary" id="kpis">
+      <div class="kpi is-bill"><div class="kpi-top"><span class="kpi-l">Hospital bill</span></div><div class="kpi-v" id="k-bill">Rs 0</div><div class="kpi-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="kpi is-pay"><div class="kpi-top"><span class="kpi-l">Insurer pays</span><span class="chipx" id="k-pay-pct"></span></div><div class="kpi-v" id="k-pay">Not yet</div><div class="kpi-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="kpi is-you"><div class="kpi-top"><span class="kpi-l">You pay</span><span class="chipx" id="k-you-pct"></span></div><div class="kpi-v" id="k-you">Not yet</div><div class="kpi-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+    </section>
 
     <section class="card" aria-labelledby="h-policy">
       <header class="card-h">
@@ -125,6 +132,7 @@
       <div id="est-body" hidden>
         <div class="print-only print-head"><strong>Claim Copilot estimate</strong><span id="print-date"></span></div>
         <div class="split" aria-hidden="true"><span id="bar-pay"></span><span id="bar-you"></span></div>
+        <p class="legend"><span class="a"><i></i>Insurer</span><span class="b"><i></i>You</span></p>
         <div class="receipt" id="receipt"></div>
 
         <div id="findings" class="findings" hidden>
