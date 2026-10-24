@@ -1,0 +1,6 @@
+/*
+  Content-Security-Policy: default-src 'self'; connect-src 'self' https://claim-copilot.onrender.com; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
