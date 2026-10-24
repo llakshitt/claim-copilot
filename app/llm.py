@@ -72,13 +72,18 @@ class GroqClient:
         }).encode()
         req = urllib.request.Request(
             "https://api.groq.com/openai/v1/chat/completions", data=body, method="POST",
-            headers={"Content-Type": "application/json", "Authorization": f"Bearer {self.api_key}"})
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {self.api_key}",
+                     "Accept": "application/json", "User-Agent": "claim-copilot/1.0 (+https://github.com/llakshitt/claim-copilot)"})
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as resp:
                 data = json.load(resp)
             return data["choices"][0]["message"]["content"]
         except urllib.error.HTTPError as e:
-            raise LLMError(f"Groq returned HTTP {e.code}") from e
+            try:
+                detail = e.read().decode("utf-8", "replace")[:200]
+            except Exception:
+                detail = ""
+            raise LLMError(f"Groq returned HTTP {e.code}: {detail}".strip()) from e
         except (urllib.error.URLError, KeyError, IndexError, json.JSONDecodeError) as e:
             raise LLMError(f"Groq request failed: {e}") from e
 
