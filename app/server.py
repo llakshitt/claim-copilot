@@ -102,6 +102,12 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
             return self._send(200, {"ok": True})
+        if self.path == "/api/models":
+            from .llm import groq_models
+            try:
+                return self._send(200, {"models": groq_models(os.environ.get("GROQ_API_KEY", ""))})
+            except LLMError as e:
+                return self._send(503, {"error": str(e)})
         if self.path in ("/", "/index.html"):
             with open(STATIC, "rb") as f:
                 return self._send(200, f.read(), "text/html; charset=utf-8")

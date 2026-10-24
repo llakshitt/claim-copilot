@@ -111,14 +111,51 @@ def _groq_post(api_key: str, payload: dict, timeout: int) -> str:
         raise LLMError(f"Groq request failed: {e}") from e
 
 
+_VISION_HINTS = ("llama-4", "vision", "-vl", "maverick", "scout")
+_vision_cache: dict = {}
+
+
+def groq_models(api_key: str, timeout: int = 20) -> list:
+    req = urllib.request.Request("https://api.groq.com/openai/v1/models", headers={
+        "Authorization": f"Bearer {api_key}", "Accept": "application/json",
+        "User-Agent": "claim-copilot/1.0 (+https://github.com/llakshitt/claim-copilot)"})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return sorted(m["id"] for m in json.load(resp)["data"])
+    except (urllib.error.URLError, KeyError, json.JSONDecodeError, TimeoutError) as e:
+        raise LLMError(f"Could not list Groq models: {e}") from e
+
+
+def _vision_payload(model: str, prompt: str, image_data_url: str) -> dict:
+    return {"model": model, "temperature": 0, "max_tokens": 4096,
+            "messages": [{"role": "user", "content": [
+                {"type": "text", "text": prompt},
+                {"type": "image_url", "image_url": {"url": image_data_url}}]}]}
+
+
 def _groq_vision(self, prompt: str, image_data_url: str) -> str:
-    model = os.environ.get("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
-    return _groq_post(self.api_key, {
-        "model": model, "temperature": 0, "max_tokens": 4096,
-        "messages": [{"role": "user", "content": [
-            {"type": "text", "text": prompt},
-            {"type": "image_url", "image_url": {"url": image_data_url}}]}],
-    }, max(self.timeout, 90))
+    """Use GROQ_VISION_MODEL if set; otherwise the default, and if the key cannot use it,
+    pick whichever vision-capable model the key can actually see."""
+    timeout = max(self.timeout, 90)
+    explicit = os.environ.get("GROQ_VISION_MODEL")
+    tried = [explicit or _vision_cache.get("model") or "meta-llama/llama-4-scout-17b-16e-instruct"]
+    try:
+        out = _groq_post(self.api_key, _vision_payload(tried[0], prompt, image_data_url), timeout)
+        _vision_cache["model"] = tried[0]
+        return out
+    except LLMError as first:
+        if explicit or "HTTP 404" not in str(first) and "HTTP 403" not in str(first):
+            raise
+        candidates = [m for m in groq_models(self.api_key) if any(h in m.lower() for h in _VISION_HINTS) and m not in tried]
+        for m in candidates:
+            try:
+                out = _groq_post(self.api_key, _vision_payload(m, prompt, image_data_url), timeout)
+                _vision_cache["model"] = m
+                return out
+            except LLMError:
+                continue
+        raise LLMError("No vision-capable Groq model is available to this API key. "
+                       "Set GROQ_VISION_MODEL to a model your key can use.") from first
 
 
 GroqClient.vision = _groq_vision
