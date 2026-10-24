@@ -20,6 +20,8 @@ For every item include "quote": the exact words copied from the policy that supp
 Omit anything the policy does not state. Never guess.
 A room rent limit written as a percentage of the sum insured goes in room_rent_cap_pct_of_si
 (for "1%" the value is 1); one written in rupees goes in room_rent_cap_per_day.
+"exclusions" are medical conditions or treatments the policy says it does not cover, never billing items
+such as registration charges or admission kits.
 For sub_limits, "category" must be one of: room, doctor_fees, surgery, ot_charges, nursing,
 diagnostics, procedure, pharmacy, consumables.
 

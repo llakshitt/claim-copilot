@@ -378,7 +378,7 @@
           for (const tr of [...$("lines").children]) { const a = tr.querySelector("td:nth-child(4) input").value.trim(), n = tr.querySelector("td:nth-child(1) input").value.trim(); if (!a && !n) tr.remove(); }
           for (const l of d.lines) addRow({ description: l.description, category: l.category, amount: Number(l.amount), days: l.days });
           changed(); ok = true;
-          st.textContent = "Added " + d.lines.length + " row(s). Check every row against your bill; the type and days are our best guess." + (d.rejected ? " " + d.rejected + " line(s) were ignored because their amount was not found in the document." : "") + (r.notes.length ? " " + r.notes.join(" ") : "");
+          st.textContent = "Added " + d.lines.length + " row(s). Check every row against your bill; the type and days are our best guess." + (d.marked_non_payable ? " " + d.marked_non_payable + " administrative charge(s) were marked Not payable; confirm against your policy." : "") + (d.rejected ? " " + d.rejected + " line(s) were ignored because their amount was not found in the document." : "") + (r.notes.length ? " " + r.notes.join(" ") : "");
         }
       }
     } catch (e) { st.textContent = friendly(e); st.className = "note bad"; }

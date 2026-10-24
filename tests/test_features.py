@@ -225,3 +225,15 @@ class MatchingTest(unittest.TestCase):
         self.assertEqual(ex.policy.clauses["sub_limit:diagnostics"].ref, "Section 5.1")
         self.assertEqual(ex.policy.clauses["sum_insured"].ref, "Section 2.1")
         self.assertTrue(any("not supported" in r[1] for r in ex.rejected))
+
+
+class AdminItemsTest(unittest.TestCase):
+    def test_admin_charges_are_marked_non_payable(self):
+        from app.bills import parse_bill
+        text = "Registration charges 500\nAdmission kit 1,200\nSurgery 45,000"
+        resp = json.dumps({"lines": [{"description": "Registration charges", "category": "other", "amount": 500},
+                                     {"description": "Admission kit", "category": "consumables", "amount": 1200},
+                                     {"description": "Surgery", "category": "surgery", "amount": 45000}]})
+        out = parse_bill(text, FakeLLM(resp))
+        self.assertEqual([l["category"] for l in out["lines"]], ["non_payable", "non_payable", "surgery"])
+        self.assertEqual(out["marked_non_payable"], 2)
